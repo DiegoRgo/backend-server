@@ -16,7 +16,12 @@ var Usuario = require('../models/usuario');
 
 app.get('/', (req, res, next) => {
 
+    var desde = req.query.desde || 0;
+    desde = Number(desde);
+
     Usuario.find({}, 'nombre email img role')
+        .skip(desde)
+        .limit(5)
         .exec(
             (err, usuarios) => {
                 if (err) {
@@ -27,10 +32,14 @@ app.get('/', (req, res, next) => {
                     });
                 }
 
-                res.status(200).json({
-                    ok: true,
-                    usuarios: usuarios
+                Usuario.count({}, (err, conteo) => {
+                    res.status(200).json({
+                        ok: true,
+                        usuarios: usuarios,
+                        total: conteo
+                    });
                 });
+
             });
 });
 
@@ -39,7 +48,7 @@ app.get('/', (req, res, next) => {
 //Actualizar usuario 
 //===================================================================================
 
-app.put('/:id', mdAutenticacion.verificacionToken, (req, res) => {
+app.put('/:id', [mdAutenticacion.verificacionToken, mdAutenticacion.verificacionRole], (req, res) => {
 
     var id = req.params.id;
     var body = req.body;
@@ -95,7 +104,7 @@ app.put('/:id', mdAutenticacion.verificacionToken, (req, res) => {
 //bcryp.hashSync - encriptacion de contrasenia en una sola via 
 //===================================================================================
 
-app.post('/', mdAutenticacion.verificacionToken, (req, res) => {
+app.post('/', (req, res) => {
 
     var body = req.body;
 
@@ -129,7 +138,7 @@ app.post('/', mdAutenticacion.verificacionToken, (req, res) => {
 //Eliminar un usuario por su ID
 //===================================================================================
 
-app.delete('/:id', mdAutenticacion.verificacionToken, (req, res) => {
+app.delete('/:id', [mdAutenticacion.verificacionToken, mdAutenticacion.verificacionRole], (req, res) => {
 
     var id = req.params.id;
     Usuario.findByIdAndRemove(id, (err, usuarioEliminado) => {
